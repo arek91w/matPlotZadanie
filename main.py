@@ -1,53 +1,62 @@
 import datetime
+
 from matplotlib import pyplot as plt
 from tkinter import *
+from tkinter import messagebox
 import yfinance as yf
 import numpy as np
 
 
-
-
 root = Tk()
-root.title('VIEW 1')
-root.geometry('300x100')
+root.title('PlotIt')
+root.geometry('200x60')
 
-
-
-#hist = msft.history(period="max")
-#closing_pos = hist["Close"]
-#print(hist.index)
-#msft = yf.Ticker("MSFT")
-#print(msft.recommendations)
-
-#print(msft.recommendations)
 e = Entry(root, width=50)
 e.pack()
+
+# do umieszczenia rekomendacji na wykresie potrzebowalem wspolrzednych y dla kazdej
+# daty rekomendacji. Funkcja jako argument przyjmuje daty rekomendacji, zmienia
+# je do formatu takiego jak w danych hostorycznych (czyli ustawią czas na 00:00:00) i zwraca
+# wartosci "Close" z danych historycznych
 def getCloseOfIndex(dateList):
     myList = []
-    print(hist)
     for date in dateList:
-        myVar = datetime.datetime(date.year, date.month, date.day)
+        removeTime = datetime.datetime(date.year, date.month, date.day)
         try:
-            xx = hist[hist.index == myVar]["Close"].values[0]
+            getClose= hist[hist.index == removeTime]["Close"].values[0]
         except:
-            xx = 0
-        myList.append(xx)
-    #for date in datelist2:
-        #print(hist[hist.index == date]["Close"])
-       # myList.append(hist[hist.index == date]["Close"])
+            getClose = 0
+        myList.append(getClose)
     return myList
 
 def graph():
-    myTicker = yf.Ticker(e.get())
-    global hist
-    hist = myTicker.history(period="max")
-    recomm = myTicker.recommendations
-    yValues = getCloseOfIndex(recomm.index)
-    print(recomm.index)
-    print(yValues)
-    plt.plot(hist.index, hist["Close"], linewidth=0.4)
-    plt.scatter(recomm.index, yValues, s=0.9, c="red")
-    plt.show()
+    try:
+        #pobiera ticker z inputu
+        myTicker = yf.Ticker(e.get())
+        
+        global hist
+        hist = myTicker.history(period="max")
+
+        # pobiera rekomendacje, a jesli ich nie ma wyświetla komunikat
+        recomm = myTicker.recommendations
+        try:
+            yValues = getCloseOfIndex(recomm.index)
+        except:
+            print("There is no recommendations!")
+        
+        # rysowanie wykresu
+        plt.figure(figsize=(12,6))
+        plt.plot(hist.index, hist["Close"], linewidth=0.5, c="#0f7791")
+        plt.xlabel("Time")
+        plt.ylabel("Close Position")
+        plt.title("Company: " + e.get().upper())
+        try:
+            plt.scatter(recomm.index, yValues, s=1.2, c="red")
+        except:
+            print("There is no recommendations!")
+        plt.show()
+    except:
+        messagebox.showinfo("Alert", "No data found")
 
 my_button = Button(root, text="DO IT!", command=graph)
 my_button.pack()
